@@ -11,6 +11,8 @@ namespace INFOMSMC_Block_Relocation
         // Sequence for output; Index 0 should be handled first
         public int[] OutputSequence;
 
+        public int[] Families { get; private set; } 
+
         // Maximum height of any of the stacks
         public int MaxHeight;
 
@@ -51,6 +53,7 @@ namespace INFOMSMC_Block_Relocation
                 if (!Config.BACK_OF_ARRAY_IS_TOP) stack.Reverse();
                 State.Add(stack.ToList());
             }
+            Families = State.SelectMany(i => i).ToArray();
         }
 
         /// <summary>
