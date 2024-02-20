@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace INFOMSMC_Block_Relocation
 {
-    internal class MinBlockingInputILP
+    internal static class MinBlockingInputILP
     {
-        public List<(int, int)> BlockingPairs(int[] inputSeq, int[] outputSeq)
+        private static List<(int, int)> BlockingPairs(int[] inputSeq, int[] outputSeq)
         {
             List<(int, int)> blockingPairs = new();
 
@@ -29,8 +29,10 @@ namespace INFOMSMC_Block_Relocation
 
             return blockingPairs;
         }
-        public void Solve(Problem p)
+        public static double Solve(Problem p)
         {
+            List<(int, int)> blockingPairs = BlockingPairs(p.InputSequence, p.OutputSequence);
+
             GRBEnv env = new GRBEnv(true);
             env.Set("LogFile", "mip1.log");
             env.Start();
@@ -39,41 +41,67 @@ namespace INFOMSMC_Block_Relocation
             GRBModel model = new GRBModel(env);
 
             // Create variables
-            List<GRBVar> xis = new List<GRBVar>();
-            List<GRBVar> yis = new List<GRBVar>();
+            GRBVar[,] xis = new GRBVar[p.Families.Max() + 1, p.State.Count];
+            GRBVar[,] yis = new GRBVar[p.Families.Max() + 1, p.State.Count];
             foreach (int i in p.Families)
             {
                 foreach (int s in Enumerable.Range(0, p.State.Count))
                 {
-                    xis.Add(model.AddVar(0.0, 1.0, 0.0, GRB.BINARY, $"x_({i},{s})"));
-                    yis.Add(model.AddVar(0.0, 1.0, 0.0, GRB.BINARY, $"y_({i},{s})"));
+                    xis[i, s] = model.AddVar(0.0, 1.0, 0.0, GRB.BINARY, $"x_({i},{s})");
+                    yis[i, s] = model.AddVar(0.0, 1.0, 0.0, GRB.BINARY, $"y_({i},{s})");
                 }
             }
 
-            // TODO: Constraints, objective
+            // Objective
+            GRBLinExpr objectiveExpr = new GRBLinExpr();
+            foreach (int i in p.Families)
+                foreach (int s in Enumerable.Range(0, p.State.Count))
+                    objectiveExpr.AddTerm(1, yis[i, s]);
 
-            // Set objective: maximize x + y + 2 z
-            //model.SetObjective(x + y + 2 * z, GRB.MAXIMIZE);
+            model.SetObjective(objectiveExpr, GRB.MINIMIZE);
 
-            //// Add constraint: x + 2 y + 3 z <= 4
-            //model.AddConstr(x + 2 * y + 3 * z <= 4.0, "c0");
+            // Constraints
+            // (1)
+            foreach (int i in p.Families)
+            {
+                GRBLinExpr constrExpr = new GRBLinExpr();
 
-            //// Add constraint: x + y >= 1
-            //model.AddConstr(x + y >= 1.0, "c1");
+                foreach (int s in Enumerable.Range(0, p.State.Count))
+                {
+                    constrExpr.AddTerm(1, xis[i, s]);
+                    constrExpr.AddTerm(1, yis[i, s]); 
+                }
 
-            //// Optimize model
-            //model.Optimize();
+                model.AddConstr(constrExpr, GRB.EQUAL, 1, $"c_1_{i}");
+            }
 
-            //Console.WriteLine(x.VarName + " " + x.X);
-            //Console.WriteLine(y.VarName + " " + y.X);
-            //Console.WriteLine(z.VarName + " " + z.X);
+            // (2)
+            foreach (int s in Enumerable.Range(0, p.State.Count))
+            {
+                GRBLinExpr constrExpr = new GRBLinExpr();
 
-            //Console.WriteLine("Obj: " + model.ObjVal);
+                foreach (int i in p.Families)
+                {
+                    constrExpr.AddTerm(1, xis[i, s]);
+                    constrExpr.AddTerm(1, yis[i, s]);
+                }
 
-            //// Dispose of model and env
-            //model.Dispose();
-            //env.Dispose();
+                model.AddConstr(constrExpr, GRB.LESS_EQUAL, p.MaxHeight, $"c_2_{s}");
+            }
 
+            foreach ((int i, int j) in blockingPairs)
+            {
+                foreach (int s in Enumerable.Range(0, p.State.Count))
+                    model.AddConstr(xis[i,s] + xis[j, s] + yis[j,s] <= 1, $"c_3_({i},{j},{s})");
+            }
+
+            model.Optimize();
+            model.Write($"results_{p.InstanceName}.lp");
+            double res = model.ObjVal;
+            model.Dispose();
+            env.Dispose();
+
+            return res;
         }
     }
 }

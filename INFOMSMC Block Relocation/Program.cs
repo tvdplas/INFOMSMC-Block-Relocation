@@ -122,6 +122,8 @@ namespace INFOMSMC_Block_Relocation
 
             Problem p = new(problemText);
             p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
+
+            Console.WriteLine(MinBlockingInputILP.Solve(p));
             Console.WriteLine(p);
         }
     }
