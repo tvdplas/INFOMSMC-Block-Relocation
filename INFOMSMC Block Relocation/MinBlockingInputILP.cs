@@ -52,14 +52,16 @@ namespace INFOMSMC_Block_Relocation
                 }
             }
 
-            GRBVar[,] m_ij = new GRBVar[p.InputSequence.Length, p.OutputSequence.Length];
+            GRBVar?[,] m_ij = new GRBVar?[p.InputSequence.Length, p.OutputSequence.Length];
             foreach (int i in Enumerable.Range(0, p.InputSequence.Length))
             {
                 foreach (int j in Enumerable.Range(0, p.OutputSequence.Length))
                 {
-                    // Alleen mogelijke paren mogen gematched worden
-                    int max = p.InputSequence[i] == p.OutputSequence[j] ? 1 : 0;
-                    m_ij[i, j] = model.AddVar(0.0, max, 0.0, GRB.BINARY, $"m_({i},{j})");
+                    if (p.InputSequence[i] == p.OutputSequence[j])
+                    {
+                        m_ij[i, j] = model.AddVar(0.0, 1.0, 0.0, GRB.BINARY, $"m_({i},{j})");
+                    }
+                    else m_ij[i, j] = null;
                 }
             }
 
@@ -88,7 +90,8 @@ namespace INFOMSMC_Block_Relocation
 
                 foreach (int i in Enumerable.Range(0, p.InputSequence.Length))
                 {
-                    constrExpr.AddTerm(1, m_ij[i, j]);
+                    if (!ReferenceEquals(m_ij[i, j], null))
+                        constrExpr.AddTerm(1, m_ij[i, j]);
                 }
 
                 model.AddConstr(constrExpr, GRB.EQUAL, 1, $"c_1_({j})");
@@ -101,7 +104,8 @@ namespace INFOMSMC_Block_Relocation
 
                 foreach (int j in Enumerable.Range(0, p.OutputSequence.Length))
                 {
-                    constrExpr.AddTerm(1, m_ij[i, j]);
+                    if (!ReferenceEquals(m_ij[i, j], null))
+                        constrExpr.AddTerm(1, m_ij[i, j]);
                 }
 
                 model.AddConstr(constrExpr, GRB.EQUAL, 1, $"c_2_({i})");
@@ -145,9 +149,11 @@ namespace INFOMSMC_Block_Relocation
                         // Gaat dit goed qua k/l?
                         GRBLinExpr constrExpr = new GRBLinExpr();
                         foreach (int l in (p.OutputSequence.Length - k - 1 >= 0) ? Enumerable.Range(k, p.OutputSequence.Length - k - 1) : [])
-                            constrExpr.AddTerm(1, m_ij[i, l]);
+                            if (!ReferenceEquals(m_ij[i, l], null))
+                                constrExpr.AddTerm(1, m_ij[i, l]);
                         foreach (int l in (k - 1 >= 0) ? Enumerable.Range(0, k - 1) : [])
-                            constrExpr.AddTerm(1, m_ij[j, l]);
+                            if (!ReferenceEquals(m_ij[j, l], null))
+                                constrExpr.AddTerm(1, m_ij[j, l]);
 
                         // Bring to other side of expression
                         constrExpr.AddTerm(-1, c_ij[i, j]);
@@ -158,9 +164,9 @@ namespace INFOMSMC_Block_Relocation
             }
 
             // (6)
-            foreach (int j in Enumerable.Range(0, p.InputSequence.Length))
+            foreach (int i in Enumerable.Range(0, p.InputSequence.Length))
             {
-                foreach (int i in Enumerable.Range(j + 1, p.InputSequence.Length - j - 1))
+                foreach (int j in Enumerable.Range(0, p.InputSequence.Length))
                 {
                     foreach (int s in Enumerable.Range(0, p.State.Count))
                     {
@@ -171,11 +177,13 @@ namespace INFOMSMC_Block_Relocation
             
             model.Optimize();
             model.Write($"results_{p.InstanceName}.lp");
-            double res = model.ObjVal;
+            double res;
+            try { res = model.ObjVal; }
+            catch { res = -1; }
             model.Dispose();
             env.Dispose();
 
             return res;
-        }
+            }
     }
 }
