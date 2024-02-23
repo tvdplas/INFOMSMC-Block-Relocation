@@ -119,7 +119,8 @@ namespace INFOMSMC_Block_Relocation
         static void Main(string[] args)
         {
             //string problemText = File.ReadAllText("../../../data/Example.json");
-            string problemText = File.ReadAllText("C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_nFam\\CompanyLoadedRandom-20-45-40-108-72-linear-0.json");
+            //string problemText = File.ReadAllText("C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_nFam\\CompanyLoadedRandom-20-45-40-108-72-linear-0.json");
+            string problemText = File.ReadAllText("C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_occ\\CompanyLoadedRandom-20-45-100-179-179-linear-0.json");
 
             Problem p = new(problemText);
             p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
