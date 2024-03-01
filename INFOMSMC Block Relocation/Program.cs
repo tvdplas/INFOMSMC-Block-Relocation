@@ -2,6 +2,18 @@
 
 namespace INFOMSMC_Block_Relocation
 {
+    public class Intermediate
+    {
+        //ILP maakt van algemeen Intermediate met stacks van items die in een volgorde opgehaald worden
+        //Heurstiek maakt van Intermediate een oplossing met verplaatsingen
+        public IList<IList<int>> Stacks;
+        public Intermediate(int W) 
+        {
+            this.Stacks = new List<IList<int>>();
+            for (int x = 0; x < W; x++)
+                this.Stacks.Add(new List<int>());
+        }
+    }
     public class Problem
     {
         public string InstanceName { get; private set; }
@@ -120,12 +132,15 @@ namespace INFOMSMC_Block_Relocation
         {
             //string problemText = File.ReadAllText("../../../data/Example.json");
             //string problemText = File.ReadAllText("C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_nFam\\CompanyLoadedRandom-20-45-40-108-72-linear-0.json");
-            string problemText = File.ReadAllText("C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_occ\\CompanyLoadedRandom-20-45-100-179-179-linear-0.json");
+            string problemText = File.ReadAllText("..\\..\\..\\data\\medium_var_occ\\CompanyLoadedRandom-20-45-100-179-179-linear-0.json");
 
             Problem p = new(problemText);
             p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
 
-            Console.WriteLine(MinBlockingInputILP.Solve(p));
+            Intermediate inter = MinBlockingInputILP.Solve(p);
+            GreedyHeuristic greedy = new GreedyHeuristic();
+            greedy.LoadProblem(inter);
+            Console.WriteLine(greedy.Solve());
             Console.WriteLine(p);
         }
     }

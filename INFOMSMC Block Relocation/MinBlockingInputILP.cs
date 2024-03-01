@@ -29,7 +29,7 @@ namespace INFOMSMC_Block_Relocation
 
             return blockingPairs;
         }
-        public static double Solve(Problem p)
+        public static Intermediate Solve(Problem p)
         {
             //List<(int, int)> blockingPairs = ConflictingPairs(p.InputSequence, p.OutputSequence);
 
@@ -100,7 +100,7 @@ namespace INFOMSMC_Block_Relocation
                         constrExpr.AddTerm(1, m_ij[i, j]);
                 }
 
-                model.AddConstr(constrExpr <= 1, $"c_1_({j})");
+                model.AddConstr(constrExpr, GRB.EQUAL, 1, $"c_1_({j})");
             }
 
             // (2)
@@ -206,19 +206,33 @@ namespace INFOMSMC_Block_Relocation
                             constrExpr.AddTerm(-1, m_ij[j, k]);
                     }
 
-                    model.AddConstr(constrExpr >= c_ij[i, j], $"c_7_({i},{j})");
+                    model.AddConstr(constrExpr + c_ij[i, j] >= 0, $"c_7_({i},{j})");
                 }
             }
 
             model.Optimize();
             model.Write($"results_{p.InstanceName}.lp");
-            double res;
-            try { res = model.ObjVal; }
-            catch { res = -1; }
+            Intermediate res = new Intermediate(p.State.Count);
+            Console.WriteLine(m_ij.GetLength(1));
+            for(int i = 0; i < x_is.GetLength(0); i++)
+            {
+                int id;
+                for (id = 0; id < m_ij.GetLength(1); id++)
+                    if (m_ij[i, id]?.X >= 0.5)
+                        break;
+                Console.WriteLine(id);
+                for(int s = 0; s < p.State.Count; s++)
+                    if (x_is[i,s].X + y_is[i,s].X >= 0.5)
+                    {
+                        res.Stacks[s].Add(id);
+                        break;
+                    }
+            }
+
             model.Dispose();
             env.Dispose();
 
             return res;
-            }
+        }
     }
 }
