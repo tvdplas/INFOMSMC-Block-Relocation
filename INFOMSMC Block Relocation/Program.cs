@@ -7,8 +7,12 @@ namespace INFOMSMC_Block_Relocation
         //ILP maakt van algemeen Intermediate met stacks van items die in een volgorde opgehaald worden
         //Heurstiek maakt van Intermediate een oplossing met verplaatsingen
         public IList<IList<int>> Stacks;
-        public Intermediate(int W) 
+        public int MaxHeight;
+        public int OutputSequenceSize;
+        public Intermediate(int W, int maxHeight, int outputSequenceSize) 
         {
+            this.MaxHeight = maxHeight;
+            this.OutputSequenceSize = outputSequenceSize;
             this.Stacks = new List<IList<int>>();
             for (int x = 0; x < W; x++)
                 this.Stacks.Add(new List<int>());
@@ -130,9 +134,11 @@ namespace INFOMSMC_Block_Relocation
     {
         static void Main(string[] args)
         {
+            Console.Write("Input rng seed: ");
+            Config.random = new Random(int.Parse(Console.ReadLine()));
             //string problemText = File.ReadAllText("../../../data/Example.json");
-            //string problemText = File.ReadAllText("C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_nFam\\CompanyLoadedRandom-20-45-40-108-72-linear-0.json");
-            string problemText = File.ReadAllText("..\\..\\..\\data\\medium_var_occ\\CompanyLoadedRandom-20-45-100-179-179-linear-0.json");
+            string problemText = File.ReadAllText("..\\..\\..\\data\\medium_var_nFam\\CompanyLoadedRandom-20-45-40-108-72-linear-0.json");
+            //string problemText = File.ReadAllText("..\\..\\..\\data\\medium_var_b\\CompanyLoadedRandom-20-10-40-16-16-linear-0.json");
 
             Problem p = new(problemText);
             p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);

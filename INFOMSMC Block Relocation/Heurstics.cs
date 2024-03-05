@@ -18,24 +18,30 @@ namespace INFOMSMC_Block_Relocation
         {
             this.Intermediate = intermediate;
             this.Sorted = new SortedStructure();
-            int N = 0;
-            for (int s = 0; s < intermediate.Stacks.Count; s++)
-                N += intermediate.Stacks[s].Count;
+            int N = this.Intermediate.OutputSequenceSize;
             this.Items = new Item[N];
             int id;
             this.Stacks = new Stack[intermediate.Stacks.Count];
             for(int s = 0; s < intermediate.Stacks.Count; s++)
             {
                 Stack stack = new Stack(s);
-                for(int i = 0; i < intermediate.Stacks[s].Count; i++)
+                for (int i = 0; i < intermediate.Stacks[s].Count; i++)
                 {
                     id = intermediate.Stacks[s][i];
-                    this.Items[id] = new Item(id);
-                    stack.Push(this.Items[id]);
+                    if(id < this.Intermediate.OutputSequenceSize)
+                    {
+                        this.Items[id] = new Item(id);
+                        stack.Push(this.Items[id]);
+                    }
+                    else{
+                        stack.Push(new Item(id));
+                    }
                 }
-                this.Sorted.Stacks.Insert(0, stack);
-                this.Sorted.Update(stack);
+                Console.WriteLine(stack.ToString(true));
                 this.Stacks[s] = stack;
+                if(stack.Count < intermediate.MaxHeight){
+                    this.Sorted.Add(stack);
+                }
             }
         }
         public int Solve()
@@ -55,7 +61,19 @@ namespace INFOMSMC_Block_Relocation
                     t.Push(block);
                     res++;
                     Console.WriteLine(block + " van " + s + " naar " + t);
+                    if(t.Count == this.Intermediate.MaxHeight){
+                        this.Sorted.Remove(t);
+                    }
+                    if(s.Count == this.Intermediate.MaxHeight - 1){
+                        this.Sorted.Add(s);
+                    }
+                    Console.WriteLine("New sorted state");
+                    foreach (var tttt in this.Sorted.Stacks)
+                        Console.WriteLine(tttt.ToString(true));
+
+                    Console.ReadLine();
                 }
+                s.Pop();
             }
             return res;
         }
@@ -75,7 +93,7 @@ namespace INFOMSMC_Block_Relocation
             while(end - start > 1)
             {
                 middle = (end + start) / 2;
-                if (this.Stacks[middle].Min < i)
+                if (this.Stacks[middle].Count > 0 && this.Stacks[middle].Min < i)
                     start = middle;
                 else
                     end = middle;
@@ -89,6 +107,23 @@ namespace INFOMSMC_Block_Relocation
             for (current++; current < this.Stacks.Count && this.Stacks[current].Min > s.Min; current++)
                 this.Stacks[current - 1] = this.Stacks[current];
             this.Stacks[current - 1] = s;
+        }
+        public void Add(Stack s){
+            this.Stacks.Add(s);
+            if(s.Count == 0){
+                return;
+            }
+            int current;
+            for(current = this.Stacks.Count - 1; current > 0; current--){
+                if(this.Stacks[current - 1].Count > 0 && this.Stacks[current - 1].Top <= s.Top){
+                    break;
+                }
+                this.Stacks[current] = this.Stacks[current - 1];
+            }
+            this.Stacks[current] = s;
+        }
+        public void Remove(Stack s){
+            this.Stacks.Remove(s);
         }
     }
     public class Stack
@@ -109,6 +144,11 @@ namespace INFOMSMC_Block_Relocation
                 if (this.Minima.Count == 0)
                     return Item.MaxValue;
                 return this.Minima[^1];
+            }
+        }
+        public int Count{
+            get{
+                return this.Items.Count;
             }
         }
         public Stack(int id)
@@ -142,6 +182,11 @@ namespace INFOMSMC_Block_Relocation
         public override string ToString()
         {
             return "Stack " + (this.id + 1);
+        }
+
+        public string ToString(bool extended)
+        {
+            return extended ? $"{this.id + 1}:\t{String.Join('\t', this.Items.Select(i => (i.Id + 1) + " "))}" : this.ToString();
         }
     }
     public class Item
@@ -178,6 +223,12 @@ namespace INFOMSMC_Block_Relocation
         public override string ToString()
         {
             return "Item " + (this.Id + 1);
+        }
+        public static bool operator ==(Item i1, Item i2){
+            return (i1.Id == i2.Id);
+        }
+        public static bool operator !=(Item i1, Item i2){
+            return (i1.Id != i2.Id);
         }
     }
 }

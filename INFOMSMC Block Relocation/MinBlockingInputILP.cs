@@ -150,32 +150,32 @@ namespace INFOMSMC_Block_Relocation
 
             // (5)
             Console.WriteLine("Constraint 5");
-            foreach (int j in Enumerable.Range(0, p.InputSequence.Length))
-            {
-                foreach (int i in Enumerable.Range(j + 1, p.InputSequence.Length - j - 1))
-                {
-                    foreach (int k in Enumerable.Range(0, p.OutputSequence.Length))
-                    {
-                        if (p.InputSequence[i] != p.OutputSequence[k]) continue;
-                        if (p.InputSequence[i] == p.InputSequence[j]) continue;
+            //foreach (int j in Enumerable.Range(0, p.InputSequence.Length))
+            //{
+            //    foreach (int i in Enumerable.Range(j + 1, p.InputSequence.Length - j - 1))
+            //    {
+            //        foreach (int k in Enumerable.Range(0, p.OutputSequence.Length))
+            //        {
+            //            if (p.InputSequence[i] != p.OutputSequence[k]) continue;
+            //            if (p.InputSequence[i] == p.InputSequence[j]) continue;
 
-                        // Gaat dit goed qua k/l?
-                        GRBLinExpr constrExpr = new GRBLinExpr();
+            //            // Gaat dit goed qua k/l?
+            //            GRBLinExpr constrExpr = new GRBLinExpr();
 
-                        foreach (int l in (p.OutputSequence.Length - k - 1 >= 0) ? Enumerable.Range(k, p.OutputSequence.Length - k - 1) : [])
-                            if (!ReferenceEquals(m_ij[i, l], null))
-                                constrExpr.AddTerm(1, m_ij[i, l]);
-                        foreach (int l in (k - 1 >= 0) ? Enumerable.Range(0, k - 1) : [])
-                            if (!ReferenceEquals(m_ij[j, l], null))
-                                constrExpr.AddTerm(1, m_ij[j, l]);
+            //            foreach (int l in (p.OutputSequence.Length - k - 1 >= 0) ? Enumerable.Range(k, p.OutputSequence.Length - k - 1) : [])
+            //                if (!ReferenceEquals(m_ij[i, l], null))
+            //                    constrExpr.AddTerm(1, m_ij[i, l]);
+            //            foreach (int l in (k - 1 >= 0) ? Enumerable.Range(0, k - 1) : [])
+            //                if (!ReferenceEquals(m_ij[j, l], null))
+            //                    constrExpr.AddTerm(1, m_ij[j, l]);
 
-                        // Bring to other side of expression
-                        constrExpr.AddTerm(-1, c_ij[i, j]);
+            //            // Bring to other side of expression
+            //            constrExpr.AddTerm(-1, c_ij[i, j]);
 
-                        model.AddConstr(constrExpr, GRB.LESS_EQUAL, 1, $"c_5_({i},{j},{k})");
-                    }
-                }
-            }
+            //            model.AddConstr(constrExpr, GRB.LESS_EQUAL, 1, $"c_5_({i},{j},{k})");
+            //        }
+            //    }
+            //}
 
             // (6)
             Console.WriteLine("Constraint 6");
@@ -210,16 +210,37 @@ namespace INFOMSMC_Block_Relocation
                 }
             }
 
-            model.Optimize();
+            // 5???
+            foreach (int j in Enumerable.Range(0, p.InputSequence.Length))
+            {
+                foreach (int i in Enumerable.Range(j + 1, p.InputSequence.Length - j - 1))
+                {
+                    GRBLinExpr constrExpr = new GRBLinExpr();
+
+                    foreach (int k in Enumerable.Range(0, p.OutputSequence.Length))
+                    {
+
+                        if (!ReferenceEquals(m_ij[i, k], null))
+                            constrExpr.AddTerm(k, m_ij[i, k]);
+                        if (!ReferenceEquals(m_ij[j, k], null))
+                            constrExpr.AddTerm(-k, m_ij[j, k]);
+                    }
+
+                    model.AddConstr(constrExpr - p.InputSequence.Length * c_ij[i, j] <= 0, $"c_7_({i},{j})");
+                }
+            }
+
+
+                model.Optimize();
             model.Write($"results_{p.InstanceName}.lp");
-            Intermediate res = new Intermediate(p.State.Count);
-            Console.WriteLine(m_ij.GetLength(1));
+            Intermediate res = new Intermediate(p.State.Count, p.MaxHeight, p.OutputSequence.Length);
             for(int i = 0; i < x_is.GetLength(0); i++)
             {
                 int id;
                 for (id = 0; id < m_ij.GetLength(1); id++)
                     if (m_ij[i, id]?.X >= 0.5)
                         break;
+                
                 Console.WriteLine(id);
                 for(int s = 0; s < p.State.Count; s++)
                     if (x_is[i,s].X + y_is[i,s].X >= 0.5)
