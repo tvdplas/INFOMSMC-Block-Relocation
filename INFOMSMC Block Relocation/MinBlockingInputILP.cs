@@ -29,16 +29,17 @@ namespace INFOMSMC_Block_Relocation
 
             return blockingPairs;
         }
-        public static Intermediate Solve(Problem p)
+        public static (Intermediate, double, double, double) Solve(Problem p)
         {
             //List<(int, int)> blockingPairs = ConflictingPairs(p.InputSequence, p.OutputSequence);
 
             GRBEnv env = new GRBEnv(true);
             env.Set("LogFile", "mip1.log");
+            env.TimeLimit = 5;
             env.Start();
-
             // Create empty model
             GRBModel model = new GRBModel(env);
+          
 
             // Create variables
             Console.WriteLine("Starting with variable adding");
@@ -241,7 +242,7 @@ namespace INFOMSMC_Block_Relocation
                     if (m_ij[i, id]?.X >= 0.5)
                         break;
                 
-                Console.WriteLine(id);
+                //Console.WriteLine(id);
                 for(int s = 0; s < p.State.Count; s++)
                     if (x_is[i,s].X + y_is[i,s].X >= 0.5)
                     {
@@ -250,10 +251,13 @@ namespace INFOMSMC_Block_Relocation
                     }
             }
 
+            var mip = model.MIPGap;
+            var bound = model.ObjBound;
+            var objVal = model.ObjVal;
             model.Dispose();
             env.Dispose();
 
-            return res;
+            return(res, mip, bound, objVal);
         }
     }
 }

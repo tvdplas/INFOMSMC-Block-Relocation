@@ -37,7 +37,7 @@ namespace INFOMSMC_Block_Relocation
                         stack.Push(new Item(id));
                     }
                 }
-                Console.WriteLine(stack.ToString(true));
+                //Console.WriteLine(stack.ToString(true));
                 this.Stacks[s] = stack;
                 if(stack.Count < intermediate.MaxHeight){
                     this.Sorted.Add(stack);
@@ -60,18 +60,18 @@ namespace INFOMSMC_Block_Relocation
                     s.Pop();
                     t.Push(block);
                     res++;
-                    Console.WriteLine(block + " van " + s + " naar " + t);
+                    //Console.WriteLine(block + " van " + s + " naar " + t);
                     if(t.Count == this.Intermediate.MaxHeight){
                         this.Sorted.Remove(t);
                     }
                     if(s.Count == this.Intermediate.MaxHeight - 1){
                         this.Sorted.Add(s);
                     }
-                    Console.WriteLine("New sorted state");
-                    foreach (var tttt in this.Sorted.Stacks)
-                        Console.WriteLine(tttt.ToString(true));
+                    //Console.WriteLine("New sorted state");
+                    //foreach (var tttt in this.Sorted.Stacks)
+                        //Console.WriteLine(tttt.ToString(true));
 
-                    Console.ReadLine();
+                    //Console.ReadLine();
                 }
                 s.Pop();
             }
