@@ -170,23 +170,60 @@ namespace INFOMSMC_Block_Relocation
     {
         static void Main(string[] args)
         {
-            Console.Write("Input rng seed: ");
-            Config.random = new Random(int.Parse(Console.ReadLine()));
-            //string problemText = File.ReadAllText("../../../data/Example.json");
-            string problemText = File.ReadAllText("..\\..\\..\\data\\medium_var_nFam\\CompanyLoadedRandom-20-45-40-108-72-linear-0.json");
-            //string problemText = File.ReadAllText("..\\..\\..\\data\\medium_var_b\\CompanyLoadedRandom-20-10-40-16-16-linear-0.json");
 
-            Problem p = new(problemText);
-            p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
+            //Config.random = new Random(int.Parse(Console.ReadLine()));
 
-            //Intermediate inter = MinBlockingInputILP.Solve(p);
-            GreedyHeuristic greedy = new GreedyHeuristic();
-            LocalSearch localSearch = new LocalSearch(greedy);
-            localSearch.LoadProblem(p);
-            Intermediate inter = localSearch.LocallySearch(30);
-            greedy.LoadProblem(inter);
-            Console.WriteLine(greedy.Solve());
-            Console.WriteLine(p);
+            string folderName = "medium_var_nFam";
+
+
+            var files = Directory.EnumerateFiles($"..\\..\\..\\data\\{folderName}\\");
+            string[] instanceNames = new string[files.Count()];
+            long[,] times = new long[files.Count(), Config.RUNS_PER_TEST_CASE];
+            double[,] ilpObj = new double[files.Count(), Config.RUNS_PER_TEST_CASE];
+            long[,] values = new long[files.Count(), Config.RUNS_PER_TEST_CASE];
+            double[,] gaps = new double[files.Count(), Config.RUNS_PER_TEST_CASE];
+            double[,] minBounds = new double[files.Count(), Config.RUNS_PER_TEST_CASE];
+            Stopwatch sw = new Stopwatch();
+            int fileC = 0;
+            foreach (var file in files) 
+            {
+                for (int run = 0; run < Config.RUNS_PER_TEST_CASE; run++)
+                {
+                    sw.Restart();
+                    string problemText = File.ReadAllText(file);
+                    Problem p = new(problemText);
+                    instanceNames[fileC] = p.InstanceName;
+                    p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
+                    (Intermediate inter, double gap, double minBound, double objective) = MinBlockingInputILP.Solve(p);
+
+                    gaps[fileC, run] = gap;
+                    minBounds[fileC, run] = minBound;
+                    ilpObj[fileC, run] = minBound;
+
+                    GreedyHeuristic greedy = new GreedyHeuristic();
+                    greedy.LoadProblem(inter);
+                    
+                    var value = greedy.Solve();
+                    sw.Stop();
+                    times[fileC, run] = sw.ElapsedMilliseconds / 1000;
+                    values[fileC, run] = value;
+                }
+                fileC++;
+                if (fileC >= 0)
+                    break;
+            }
+
+            List<string> lines = new List<string>(files.Count() * (1 + Config.RUNS_PER_TEST_CASE) + 1);
+            lines.Add("time;value;gap;minBound;ilpval");
+            for(fileC = 0; fileC < files.Count(); fileC++)
+            {
+                lines.Add(instanceNames[fileC]);
+                for (int run = 0; run < Config.RUNS_PER_TEST_CASE; run++)
+                {
+                    lines.Add($"{times[fileC, run]};{values[fileC, run]};{gaps[fileC, run]};{minBounds[fileC, run]};{ilpObj[fileC, run]}");
+                }
+            }
+            File.WriteAllLines($"./results_{folderName}.csv", lines);
         }
     }
 }
