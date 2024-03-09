@@ -16,7 +16,7 @@ namespace INFOMSMC_Block_Relocation
         public GreedyHeuristic Heuristic;
         public int Score;
         public Dictionary<int, List<int>> Families;
-        public List<int> FamilieNamen;
+        public List<int> FamilyNames;
         public LocalSearch(GreedyHeuristic heuristic)
         {
             this.Problem = null;
@@ -32,6 +32,7 @@ namespace INFOMSMC_Block_Relocation
             this.InitialStack.Clear();
             this.Matching.Clear();
             Families = new();
+            FamilyNames = new();
 
             //Place everything random
             int W = p.State.Count, s;
@@ -45,7 +46,11 @@ namespace INFOMSMC_Block_Relocation
 
                 if (Families.ContainsKey(p.InputSequence[i]))
                     Families[p.InputSequence[i]].Add(i);
-                else Families[p.InputSequence[i]] = [i];
+                else
+                {
+                    Families[p.InputSequence[i]] = [i];
+                    this.FamilyNames.Add(p.InputSequence[i]);
+                }
             }
             for (int i = 0; i < p.InputSequence.Length; i++)
                 this.Matching.Add(p.OutputSequence.Length);
@@ -67,7 +72,7 @@ namespace INFOMSMC_Block_Relocation
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            while (sw.ElapsedMilliseconds / 1000 < maxtime)
+            for (int it = 0; sw.ElapsedMilliseconds / 1000 < maxtime && it < 1000000; it++)
             {
                 if (Config.random.NextDouble() < 0.7) ReplaceStack();
                 else Tinder();
@@ -90,6 +95,7 @@ namespace INFOMSMC_Block_Relocation
         public void Tinder()
         {
             int family = Config.random.Next(0, this.Families.Count);
+            family = this.FamilyNames[family];
             if (this.Families[family].Count == 1)
                 return;
             int length = this.Families[family].Count;
