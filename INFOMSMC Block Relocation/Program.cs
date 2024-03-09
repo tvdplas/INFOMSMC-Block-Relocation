@@ -210,8 +210,6 @@ namespace INFOMSMC_Block_Relocation
                     values[fileC, run] = value;
                 }
                 fileC++;
-                if (fileC >= 0)
-                    break;
             }
 
             List<string> lines = new List<string>(files.Count() * (1 + Config.RUNS_PER_TEST_CASE) + 1);
