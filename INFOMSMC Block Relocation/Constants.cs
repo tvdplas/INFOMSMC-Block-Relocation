@@ -7,9 +7,8 @@
         // sourced this might not be the case. 
         public static bool BACK_OF_ARRAY_IS_TOP = true;
 
-        public static int RUNS_PER_TEST_CASE = 1;
-
         public static Random random = new Random();
+        internal static int RUNS_PER_TEST_CASE = 1;
     }
 
     public enum InputGenerationStrategy
