@@ -17,6 +17,19 @@ namespace INFOMSMC_Block_Relocation
             for (int x = 0; x < W; x++)
                 this.Stacks.Add(new List<int>());
         }
+
+        public Intermediate(List<int> InitialStack, List<int> Matching, Problem p) {
+            this.MaxHeight = p.MaxHeight;
+            this.OutputSequenceSize = p.OutputSequence.Length;
+            this.Stacks = new List<IList<int>>();
+            for (int x = 0; x < p.State.Count; x++)
+                this.Stacks.Add(new List<int>());
+
+            for (int i = 0; i < InitialStack.Count; i++)
+            {
+                Stacks[InitialStack[i]].Add(Matching[i]);
+            }
+        }
     }
     public class Problem
     {
@@ -34,6 +47,18 @@ namespace INFOMSMC_Block_Relocation
 
         // Current problem state
         public List<List<int>> State;
+
+        public Problem Clone()
+        {
+            return new Problem(
+                this.InstanceName,
+                this.InputSequence.Select(x => x).ToArray(),
+                this.OutputSequence.Select(x => x).ToArray(),
+                this.Families.Select(x => x).ToArray(),
+                this.MaxHeight,
+                this.State.Select(x => x.Select(y => y).ToList()).ToList()
+            );
+        }
 
         // Data structures for JSON parsing
         private class JSONProblem
@@ -71,6 +96,17 @@ namespace INFOMSMC_Block_Relocation
             }
             Families = State.SelectMany(i => i).ToArray();
         }
+
+        public Problem(string instanceName, int[] inputSequence, int[] outputSequence, int[] families, int maxHeight, List<List<int>> state) : this(instanceName)
+        {
+            InputSequence = inputSequence;
+            OutputSequence = outputSequence;
+            Families = families;
+            MaxHeight = maxHeight;
+            State = state;
+        }
+
+
 
         /// <summary>
         /// Generates a new input sequence from the current state.
@@ -143,8 +179,11 @@ namespace INFOMSMC_Block_Relocation
             Problem p = new(problemText);
             p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
 
-            Intermediate inter = MinBlockingInputILP.Solve(p);
+            //Intermediate inter = MinBlockingInputILP.Solve(p);
             GreedyHeuristic greedy = new GreedyHeuristic();
+            LocalSearch localSearch = new LocalSearch(greedy);
+            localSearch.LoadProblem(p);
+            Intermediate inter = localSearch.LocallySearch(30);
             greedy.LoadProblem(inter);
             Console.WriteLine(greedy.Solve());
             Console.WriteLine(p);
