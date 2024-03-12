@@ -35,7 +35,7 @@ namespace INFOMSMC_Block_Relocation
 
             GRBEnv env = new GRBEnv(true);
             env.Set("LogFile", "mip1.log");
-            env.TimeLimit = 60;
+            env.TimeLimit = 180;
             env.Start();
             // Create empty model
             GRBModel model = new GRBModel(env);

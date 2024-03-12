@@ -8,7 +8,7 @@
         public static bool BACK_OF_ARRAY_IS_TOP = true;
 
         public static Random random = new Random();
-        internal static int RUNS_PER_TEST_CASE = 1;
+        internal static int RUNS_PER_TEST_CASE = 5;
     }
 
     public enum InputGenerationStrategy

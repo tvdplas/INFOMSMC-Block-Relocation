@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace INFOMSMC_Block_Relocation
 {
@@ -171,10 +172,10 @@ namespace INFOMSMC_Block_Relocation
     {
         static void Main(string[] args)
         {
-
-            //Config.random = new Random(int.Parse(Console.ReadLine()));
-
             string folderName = "medium_var_nFam";
+            string fileName = $"./results_{folderName}.csv";
+            File.Delete(fileName);
+            File.AppendAllLines(fileName, ["time;value;gap;minBound;ilpval"]);
 
 
             var files = Directory.EnumerateFiles($"..\\..\\..\\data\\{folderName}\\");
@@ -186,12 +187,18 @@ namespace INFOMSMC_Block_Relocation
             double[,] minBounds = new double[files.Count(), Config.RUNS_PER_TEST_CASE];
             Stopwatch sw = new Stopwatch();
             int fileC = 0;
+
+
+
             foreach (var file in files) 
             {
+                string problemText = File.ReadAllText(file);
+                Problem p_instanceName = new(problemText);
+                File.AppendAllLines(fileName, [p_instanceName.InstanceName]);
+
                 for (int run = 0; run < Config.RUNS_PER_TEST_CASE; run++)
                 {
                     sw.Restart();
-                    string problemText = File.ReadAllText(file);
                     Problem p = new(problemText);
                     instanceNames[fileC] = p.InstanceName;
                     p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
@@ -199,7 +206,7 @@ namespace INFOMSMC_Block_Relocation
 
                     gaps[fileC, run] = gap;
                     minBounds[fileC, run] = minBound;
-                    ilpObj[fileC, run] = minBound;
+                    ilpObj[fileC, run] = objective;
 
                     GreedyHeuristic greedy = new GreedyHeuristic();
                     greedy.LoadProblem(inter);
@@ -208,21 +215,11 @@ namespace INFOMSMC_Block_Relocation
                     sw.Stop();
                     times[fileC, run] = sw.ElapsedMilliseconds / 1000;
                     values[fileC, run] = value;
+
+                    File.AppendAllLines(fileName, [$"{times[fileC, run]};{values[fileC, run]};{gaps[fileC, run]};{minBounds[fileC, run]};{ilpObj[fileC, run]}"]);
                 }
                 fileC++;
             }
-
-            List<string> lines = new List<string>(files.Count() * (1 + Config.RUNS_PER_TEST_CASE) + 1);
-            lines.Add("time;value;gap;minBound;ilpval");
-            for(fileC = 0; fileC < files.Count(); fileC++)
-            {
-                lines.Add(instanceNames[fileC]);
-                for (int run = 0; run < Config.RUNS_PER_TEST_CASE; run++)
-                {
-                    lines.Add($"{times[fileC, run]};{values[fileC, run]};{gaps[fileC, run]};{minBounds[fileC, run]};{ilpObj[fileC, run]}");
-                }
-            }
-            File.WriteAllLines($"./results_{folderName}.csv", lines);
         }
     }
 }
