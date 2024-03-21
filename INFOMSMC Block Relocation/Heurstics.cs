@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Security.Permissions;
 
 namespace INFOMSMC_Block_Relocation
@@ -56,7 +57,18 @@ namespace INFOMSMC_Block_Relocation
                 while (s.Top != this.Items[i])
                 {
                     block = s.Top;
-                    t = this.Sorted.GetClosest(block);
+                    try
+                    {
+                        t = this.Sorted.GetClosest(block);
+                    }   
+                    catch(Exception e)
+                    {
+                        if (e.Message == "no stacks available")
+                        {
+                            return int.MaxValue;
+                        }
+                        else throw e;
+                    }
                     s.Pop();
                     t.Push(block);
                     res++;
@@ -87,8 +99,18 @@ namespace INFOMSMC_Block_Relocation
         }
         public Stack GetClosest(Item i)
         {
+            if (this.Stacks.Count == 0)
+            {
+                throw new Exception("no stacks available");
+            }
             if (i.Stack == this.Stacks[^1])
+            {
+                if (this.Stacks.Count <= 1)
+                {
+                    throw new Exception("no stacks available");
+                }
                 return this.Stacks[^2];
+            }
             int start = -1, end = this.Stacks.Count - 1, middle;
             while(end - start > 1)
             {

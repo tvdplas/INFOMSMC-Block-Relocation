@@ -99,8 +99,9 @@ namespace INFOMSMC_Block_Relocation
             Families = State.SelectMany(i => i).ToArray();
         }
 
-        public Problem(string instanceName, int[] inputSequence, int[] outputSequence, int[] families, int maxHeight, List<List<int>> state) : this(instanceName)
+        public Problem(string instanceName, int[] inputSequence, int[] outputSequence, int[] families, int maxHeight, List<List<int>> state)
         {
+            InstanceName = instanceName;
             InputSequence = inputSequence;
             OutputSequence = outputSequence;
             Families = families;
@@ -172,13 +173,15 @@ namespace INFOMSMC_Block_Relocation
     {
         static void Main(string[] args)
         {
-            string folderName = "medium_var_nFam";
+            string folderName = Console.ReadLine();
+            //string folderName = "medium_var_b";
             string fileName = $"./results_{folderName}.csv";
             File.Delete(fileName);
-            File.AppendAllLines(fileName, ["time;value;gap;minBound;ilpval"]);
+            File.AppendAllLines(fileName, ["ilp_time;ilp_res_val;ilp_gap;ilp_min_bound;ilp_val;ls_time;ls_res_val;"]);
 
 
-            var files = Directory.EnumerateFiles($"..\\..\\..\\data\\{folderName}\\");
+            //var files = Directory.EnumerateFiles($"..\\..\\..\\data\\{folderName}\\");
+            string[] files = ["C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_occ\\CompanyLoadedRandom-20-45-100-179-179-linear-0.json"];
             string[] instanceNames = new string[files.Count()];
             long[,] times = new long[files.Count(), Config.RUNS_PER_TEST_CASE];
             double[,] ilpObj = new double[files.Count(), Config.RUNS_PER_TEST_CASE];
@@ -195,6 +198,9 @@ namespace INFOMSMC_Block_Relocation
                 string problemText = File.ReadAllText(file);
                 Problem p_instanceName = new(problemText);
                 File.AppendAllLines(fileName, [p_instanceName.InstanceName]);
+                Console.WriteLine("+++++++++++++++++++++++++++++++++++");
+                Console.WriteLine($"Done with {(double)fileC / files.Count() * 100}%");
+                Console.WriteLine("+++++++++++++++++++++++++++++++++++");
 
                 for (int run = 0; run < Config.RUNS_PER_TEST_CASE; run++)
                 {
@@ -202,21 +208,30 @@ namespace INFOMSMC_Block_Relocation
                     Problem p = new(problemText);
                     instanceNames[fileC] = p.InstanceName;
                     p.GenerateInputSequence(InputGenerationStrategy.FullyRandomized);
-                    (Intermediate inter, double gap, double minBound, double objective) = MinBlockingInputILP.Solve(p);
+                    Problem localSearchProblem = p.Clone();
 
+
+                    // Solve using ILP
+                    (Intermediate inter, double gap, double minBound, double objective) = MinBlockingInputILP.Solve(p);
                     gaps[fileC, run] = gap;
                     minBounds[fileC, run] = minBound;
                     ilpObj[fileC, run] = objective;
-
                     GreedyHeuristic greedy = new GreedyHeuristic();
                     greedy.LoadProblem(inter);
-                    
                     var value = greedy.Solve();
-                    sw.Stop();
                     times[fileC, run] = sw.ElapsedMilliseconds / 1000;
                     values[fileC, run] = value;
+                    sw.Stop();
 
-                    File.AppendAllLines(fileName, [$"{times[fileC, run]};{values[fileC, run]};{gaps[fileC, run]};{minBounds[fileC, run]};{ilpObj[fileC, run]}"]);
+                    // Solve using LS
+                    GreedyHeuristic greedyLS = new GreedyHeuristic();
+                    LocalSearch ls = new LocalSearch(greedyLS);
+                    ls.LoadProblem(localSearchProblem);
+                    (var interLS, var timeLs) = ls.LocallySearch(180);
+                    greedyLS.LoadProblem(interLS);
+                    var valueLS = greedyLS.Solve();                    
+
+                    File.AppendAllLines(fileName, [$"{times[fileC, run]};{values[fileC, run]};{gaps[fileC, run]};{minBounds[fileC, run]};{ilpObj[fileC, run]};{timeLs};{valueLS}"]);
                 }
                 fileC++;
             }

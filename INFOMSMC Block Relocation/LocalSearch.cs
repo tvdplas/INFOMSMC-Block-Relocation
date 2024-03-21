@@ -68,7 +68,7 @@ namespace INFOMSMC_Block_Relocation
             this.Score = int.MaxValue;
             this.Evaluate();
         }
-        public Intermediate LocallySearch(int maxtime) 
+        public (Intermediate, double) LocallySearch(int maxtime) 
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -80,14 +80,19 @@ namespace INFOMSMC_Block_Relocation
                 if (Score == 0) break;
             }
             sw.Stop();
-            return new Intermediate(this.InitialStack, this.Matching, this.Problem);
+            return (new Intermediate(this.InitialStack, this.Matching, this.Problem), sw.ElapsedMilliseconds / 1000);
         }
         public void ReplaceStack()
         {
             int item = Config.random.Next(0, this.InitialStack.Count);
             int newstack = Config.random.Next(0, this.Problem.State.Count), oldstack = this.InitialStack[item];
-            while(newstack == oldstack || this.Height[newstack] == this.Problem.MaxHeight)
+            int tryEverything = 0;
+            while((newstack == oldstack || this.Height[newstack] == this.Problem.MaxHeight) && ++tryEverything < this.Problem.State.Count * 5)
                 newstack = Config.random.Next(0, this.Problem.State.Count);
+            if (newstack == oldstack || this.Height[newstack] == this.Problem.MaxHeight)
+            {
+                return;
+            }
             this.InitialStack[item] = newstack;
             if (!this.Evaluate())
                 this.InitialStack[item] = oldstack;
