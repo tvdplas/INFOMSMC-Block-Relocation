@@ -60,8 +60,11 @@ namespace DataAnalysis
                 lsResWc.Add(ls_wc);
             }
 
-            List<double> BK = data2.Select(x => double.Parse(x.Split(";")[^2])).ToList();
-            
+            List<double> BK = data2.Select(x => double.Parse(x.Split(";")[^2])).ToList().GetRange(0, lpResAvg.Count);
+
+            Console.WriteLine("Average results");
+            Console.WriteLine($"{Math.Round(BK.Average(), 3)} & {Math.Round(lpResAvg.Average(), 3)} & {Math.Round(lsResAvg.Average(), 3)} & {Math.Round(lpResWc.Average(), 3)} & {Math.Round(lsResWc.Average(), 3)}");
+
             // Avg
             List<double> ratiosLS = lsResAvg.Zip(BK).Select((x) => x.First / x.Second).ToList();
             List<double> ratiosLP = lpResAvg.Zip(BK).Select((x) => x.First / x.Second).ToList();
@@ -70,6 +73,7 @@ namespace DataAnalysis
             double stdDevLS = ratiosLS.StandardDeviation();
             double stdDevLP = ratiosLP.StandardDeviation();
 
+            Console.WriteLine("Ratios for average");
             Console.WriteLine($"{Math.Round(avgLP, 3)} & {Math.Round(avgLS, 3)} & {Math.Round(stdDevLP, 3)} & {Math.Round(stdDevLS, 3)}");
 
             // Worst case
@@ -79,6 +83,8 @@ namespace DataAnalysis
             double avgLPWC = ratiosLPWC.Average();
             double stdDevLSWC = ratiosLSWC.StandardDeviation();
             double stdDevLPWC = ratiosLPWC.StandardDeviation();
+
+            Console.WriteLine("Ratios for worst case");
             Console.WriteLine($"{Math.Round(avgLPWC, 3)} & {Math.Round(avgLSWC, 3)} & {Math.Round(stdDevLPWC, 3)} & {Math.Round(stdDevLSWC, 3)}");
         }
     }
