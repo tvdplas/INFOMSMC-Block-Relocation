@@ -174,14 +174,15 @@ namespace INFOMSMC_Block_Relocation
         static void Main(string[] args)
         {
             string folderName = Console.ReadLine();
-            //string folderName = "medium_var_b";
+            int skip = int.Parse(Console.ReadLine());
+            //string folderName = "medium_var_sdf";
             string fileName = $"./results_{folderName}.csv";
             File.Delete(fileName);
             File.AppendAllLines(fileName, ["ilp_time;ilp_res_val;ilp_gap;ilp_min_bound;ilp_val;ls_time;ls_res_val;"]);
 
 
-            //var files = Directory.EnumerateFiles($"..\\..\\..\\data\\{folderName}\\");
-            string[] files = ["C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_occ\\CompanyLoadedRandom-20-45-100-179-179-linear-0.json"];
+            var files = Directory.EnumerateFiles($"..\\..\\..\\data\\{folderName}\\").Skip(skip);
+            //string[] files = ["C:\\Users\\thoma\\Desktop\\INFOMSMC Block Relocation\\INFOMSMC Block Relocation\\data\\medium_var_occ\\CompanyLoadedRandom-20-45-100-179-179-linear-0.json"];
             string[] instanceNames = new string[files.Count()];
             long[,] times = new long[files.Count(), Config.RUNS_PER_TEST_CASE];
             double[,] ilpObj = new double[files.Count(), Config.RUNS_PER_TEST_CASE];
@@ -212,26 +213,41 @@ namespace INFOMSMC_Block_Relocation
 
 
                     // Solve using ILP
-                    (Intermediate inter, double gap, double minBound, double objective) = MinBlockingInputILP.Solve(p);
-                    gaps[fileC, run] = gap;
-                    minBounds[fileC, run] = minBound;
-                    ilpObj[fileC, run] = objective;
-                    GreedyHeuristic greedy = new GreedyHeuristic();
-                    greedy.LoadProblem(inter);
-                    var value = greedy.Solve();
-                    times[fileC, run] = sw.ElapsedMilliseconds / 1000;
-                    values[fileC, run] = value;
-                    sw.Stop();
+                    double gap = -1, minBound = -1, objective = -1, value = -1;
+                    try
+                    {
+                        (Intermediate inter, gap, minBound, objective) = MinBlockingInputILP.Solve(p);
+                        GreedyHeuristic greedy = new GreedyHeuristic();
+                        greedy.LoadProblem(inter);
+                        value = greedy.Solve();
+                        sw.Stop();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("+++++++++++++++++++++++++++++++++++");
+                        Console.WriteLine("Geen ILP oplossing");
+                        Console.WriteLine("+++++++++++++++++++++++++++++++++++");
+                    }
 
                     // Solve using LS
-                    GreedyHeuristic greedyLS = new GreedyHeuristic();
-                    LocalSearch ls = new LocalSearch(greedyLS);
-                    ls.LoadProblem(localSearchProblem);
-                    (var interLS, var timeLs) = ls.LocallySearch(180);
-                    greedyLS.LoadProblem(interLS);
-                    var valueLS = greedyLS.Solve();                    
+                    double timeLs = -1, valueLS = -1;
+                    try
+                    {
+                        GreedyHeuristic greedyLS = new GreedyHeuristic();
+                        LocalSearch ls = new LocalSearch(greedyLS);
+                        ls.LoadProblem(localSearchProblem);
+                        (var interLS, timeLs) = ls.LocallySearch(60);
+                        greedyLS.LoadProblem(interLS);
+                        valueLS = greedyLS.Solve();
+                    }
+                    catch (System.Exception e)
+                    { 
+                        Console.WriteLine("+++++++++++++++++++++++++++++++++++");
+                        Console.WriteLine("Geen LS oplossing");
+                        Console.WriteLine("+++++++++++++++++++++++++++++++++++");
+                    }
 
-                    File.AppendAllLines(fileName, [$"{times[fileC, run]};{values[fileC, run]};{gaps[fileC, run]};{minBounds[fileC, run]};{ilpObj[fileC, run]};{timeLs};{valueLS}"]);
+                    File.AppendAllLines(fileName, [$"{sw.ElapsedMilliseconds / 1000};{value};{gap};{minBound};{objective};{timeLs};{valueLS}"]);
                 }
                 fileC++;
             }

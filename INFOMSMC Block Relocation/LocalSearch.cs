@@ -74,12 +74,13 @@ namespace INFOMSMC_Block_Relocation
             sw.Start();
             for (int it = 0; sw.ElapsedMilliseconds / 1000 < maxtime && it < 1000000; it++)
             {
-                if (Config.random.NextDouble() < 0.7) ReplaceStack();
+                if(Config.random.NextDouble() < 0.7) ReplaceStack();
                 else Tinder();
 
                 if (Score == 0) break;
             }
             sw.Stop();
+            if (Score == int.MaxValue) throw new Exception();
             return (new Intermediate(this.InitialStack, this.Matching, this.Problem), sw.ElapsedMilliseconds / 1000);
         }
         public void ReplaceStack()
